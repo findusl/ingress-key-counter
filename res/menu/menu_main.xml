@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item android:id="@+id/add" 
+        android:visible="true" 
+        android:icon="@android:drawable/ic_menu_add" 
+        android:title="Add" 
+        android:enabled="true" 
+		android:showAsAction="ifRoom"
+        android:onClick="onAddClicked"></item>
+    
+
+</menu>
