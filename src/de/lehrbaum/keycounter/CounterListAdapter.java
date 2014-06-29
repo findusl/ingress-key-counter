@@ -9,6 +9,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 
+/**
+ * An adapter showing the portals in a list view.
+ * 
+ * @author Sebastian Lehrbaum
+ * @version 1.0
+ */
 public class CounterListAdapter extends BaseAdapter {
 	
 	private List<Portal> portals;
@@ -45,13 +51,16 @@ public class CounterListAdapter extends BaseAdapter {
 		Portal item = portals.get(position);
 		View view;
 		if (convertView == null) {
+			//create new view
 			view = inflater.inflate(R.layout.list_element, parent, false);
 		} else {
+			//reuse old view
 			view = convertView;
 		}
+		//get the portal view element in the view
 		PortalView pView = (PortalView) view.findViewById(R.id.portalView);
-		pView.init(menuInflater, activity);
-		pView.setPortal(item);
+		//set it's portal
+		pView.init(item, menuInflater, activity);
 		return view;
 	}
 }

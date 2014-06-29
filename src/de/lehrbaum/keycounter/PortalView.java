@@ -20,9 +20,13 @@ public class PortalView extends TextView implements MenuItem.OnMenuItemClickList
 	private static final String TAG = PortalView.class.getCanonicalName();
 
 	private Portal portal;
+	/*rectangles used for showing the number of keys
+	 * All of the same size positioned just to the right
+	 * side of the previous one.
+	 */
 	private Rect [] rects;
-	private Paint lgreen, dgreen, red;
-	private boolean longClick;
+	private Paint lgreen, dgreen, red;//colors for the painting
+	private boolean longClick;//true if there has been a long click
 	private MenuInflater inflater;
 	private MainActivity activity;
 	
@@ -34,13 +38,15 @@ public class PortalView extends TextView implements MenuItem.OnMenuItemClickList
 		super(context, attrs, defStyle);
 	}
 	
-	public void init(MenuInflater inflater, MainActivity activity) {
+	public void init(Portal portal, MenuInflater inflater, MainActivity activity) {
+		this.portal = portal;
 		this.inflater = inflater;
 		this.activity = activity;
 	}
 	
 	@Override
 	protected void onFinishInflate() {
+		//initialize the stuff used for painting. This will save time when painting.
 		lgreen = new Paint();
 		dgreen = new Paint();
 		red = new Paint();
@@ -56,6 +62,7 @@ public class PortalView extends TextView implements MenuItem.OnMenuItemClickList
 	
 	@Override
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+		//resize the rectangles fitting the new size.
 		double width = w/MainActivity.MAX_KEYS;
 		double current = 0;
 		rects = new Rect[(int) MainActivity.MAX_KEYS];
@@ -70,14 +77,10 @@ public class PortalView extends TextView implements MenuItem.OnMenuItemClickList
 		return portal;
 	}
 	
-	public void setPortal(Portal portal) {
-		this.portal = portal;
-		setText(portal.getName());
-	}
-	
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		if (event.getAction() == MotionEvent.ACTION_UP) {
+			//user removed his finger
 			if(!longClick) {
 				//simple click
 				int middle = getWidth() / 2;
@@ -89,25 +92,26 @@ public class PortalView extends TextView implements MenuItem.OnMenuItemClickList
 				invalidate();
 			}
 			else{
-				//long click
+				//long click. reset the flag and don't use this touch.
 				longClick = false;
 			}
 		}
 		super.onTouchEvent(event);
-		return true; //interessted in following events
+		return true; //Interested in following events
 	}
 
 	@Override
 	public boolean onLongClick(View p1)
 	{
 		showContextMenu();
-		longClick = true;
+		longClick = true;//set the flag so it won't be interpreted as short click
 		return true;
 	}
 
 	@Override
 	protected void onCreateContextMenu(ContextMenu menu)
 	{
+		//showing the context menu with the delete button
 		inflater.inflate(R.menu.menu_element, menu);
 		MenuItem item = menu.findItem(R.id.delete);
 		item.setOnMenuItemClickListener(this);
@@ -117,12 +121,14 @@ public class PortalView extends TextView implements MenuItem.OnMenuItemClickList
 	@Override
 	public boolean onMenuItemClick(MenuItem p1)
 	{
+		//delete clicked
 		activity.removePortal(portal);
 		return true;
 	}
 	
 	@Override
 	protected void onDraw(Canvas canvas) {
+		//draw this portal view. Visualize the number of keys by coloring the rectangles.
 		Log.d(PortalView.TAG, "onDraw called");
 		for(int i = 0; i < portal.getKeyCount(); i++) {
 			canvas.drawRect(rects[i], i%2 == 0 ? lgreen : dgreen);
