@@ -113,9 +113,8 @@ public class MainActivity extends ListActivity {
 			Portal p = new Portal(name, count);
 			portals.add(p);
 		}
+		//sorting
 		Collections.sort(portals);
-		//		portals.add(new Portal("test", 2));
-		//		portals.add(new Portal("Test", 5));
 	}
 	
 	/**

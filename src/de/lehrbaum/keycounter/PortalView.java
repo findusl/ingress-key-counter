@@ -5,7 +5,6 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.ContextMenu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -17,6 +16,7 @@ import android.widget.TextView;
 
 public class PortalView extends TextView implements MenuItem.OnMenuItemClickListener, OnLongClickListener {
 	
+	@SuppressWarnings("unused")
 	private static final String TAG = PortalView.class.getCanonicalName();
 
 	private Portal portal;
@@ -40,6 +40,7 @@ public class PortalView extends TextView implements MenuItem.OnMenuItemClickList
 	
 	public void init(Portal portal, MenuInflater inflater, MainActivity activity) {
 		this.portal = portal;
+		setText(portal.getName());
 		this.inflater = inflater;
 		this.activity = activity;
 	}
@@ -129,7 +130,7 @@ public class PortalView extends TextView implements MenuItem.OnMenuItemClickList
 	@Override
 	protected void onDraw(Canvas canvas) {
 		//draw this portal view. Visualize the number of keys by coloring the rectangles.
-		Log.d(PortalView.TAG, "onDraw called");
+		//		Log.d(PortalView.TAG, "onDraw called");
 		for(int i = 0; i < portal.getKeyCount(); i++) {
 			canvas.drawRect(rects[i], i%2 == 0 ? lgreen : dgreen);
 		}
