@@ -53,7 +53,7 @@ public class PortalView extends TextView implements MenuItem.OnMenuItemClickList
 		red = new Paint();
 		lgreen.setColor(getResources().getColor(android.R.color.holo_green_light));
 		dgreen.setColor(getResources().getColor(android.R.color.holo_green_dark));
-		red.setColor(getResources().getColor(android.R.color.holo_red_light));
+		red.setColor(getResources().getColor(android.R.color.darker_gray));
 		setClickable(true);
 		setLongClickable(true);
 		setOnLongClickListener(this);
