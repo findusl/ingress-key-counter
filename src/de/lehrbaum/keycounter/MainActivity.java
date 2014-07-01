@@ -8,6 +8,7 @@ import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -57,7 +58,12 @@ public class MainActivity extends ListActivity {
 	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-		MenuInflater inflater = getMenuInflater();
+		MenuInflater inflater;
+		//an error in older sdk versions...
+		if (Build.VERSION.SDK_INT > 15)
+			inflater = getMenuInflater();
+		else
+			inflater = new MenuInflater(this);
 		inflater.inflate(R.menu.menu_main, menu);
 		return true;
 	}
