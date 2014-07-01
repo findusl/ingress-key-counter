@@ -65,7 +65,7 @@ public class MainActivity extends ListActivity {
 	/**
 	 * Called when the menu Item add is clicked.
 	 */
-	public void onAddClicked(MenuItem m) {
+	public boolean onAddClicked(MenuItem m) {
 		AlertDialog.Builder alert = new AlertDialog.Builder(this);
 		
 		//show input dialog for adding portal
@@ -95,6 +95,7 @@ public class MainActivity extends ListActivity {
 		});
 		//show
 		alert.show();
+		return true;
 	}
 	
 	/**
