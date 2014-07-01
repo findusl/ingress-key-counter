@@ -60,9 +60,9 @@ public class MainActivity extends ListActivity {
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater;
 		//an error in older sdk versions...
-		if (Build.VERSION.SDK_INT < 16) {
+		if (Build.VERSION.SDK_INT > 15)
 			inflater = getMenuInflater();
-		} else
+		else
 			inflater = new MenuInflater(this);
 		inflater.inflate(R.menu.menu_main, menu);
 		return true;
