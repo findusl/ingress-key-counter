@@ -1,20 +1,64 @@
 package de.lehrbaum.keycounter;
 
+import android.content.Context;
+import android.database.Cursor;
+import android.util.Log;
+
 public class Portal implements Comparable<Portal> {
+	private static final String TAG = Portal.class.getCanonicalName();
+	
+	private long id;
 	private String name;
 	private short keys;
 	
 	/**
-	 * Create a new portal.
+	 * Create a new portal and writes it to the database.
 	 * 
+	 * @param c The applications context for writing to the database.
+	 * @param category The current category.
 	 * @param name The name of the portal.
-	 * @param keys The number of keys existing for the portal.
 	 */
-	public Portal(String name, int keys) {
+	public Portal(final Context c, final int category, final String name) {
+		//creates the portal in the database and gets the unique id
+		final DatabaseHandler dh = new DatabaseHandler(c);
+		final long id = dh.addPortal(category, name);
+		if (id == -1) {
+			Log.d(Portal.TAG, "Could not create portal " + name);
+			return;
+		}
+		//initialize the values of this class
+		this.id = id;
 		this.name = name;
-		this.keys = (short) keys;
+		keys = 0;
 	}
 	
+	public Portal(final Cursor c) {
+		id = c.getLong(0);
+		name = c.getString(1);
+		keys = c.getShort(2);
+	}
+	
+	@Override
+	public int compareTo(final Portal another) {
+		return name.compareTo(another.name);
+	}
+	
+	public void decreaseCount(final Context c) {
+		if (keys > 0) {
+			keys--;
+			keysChanged(c);
+		}
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (o instanceof Portal) {
+			Portal p = (Portal) o;
+			return id == p.id && keys == p.keys && p.name.equals(name);
+		}
+		return false;
+	}
+
 	/**
 	 * @return The number of keys for this portal.
 	 */
@@ -29,18 +73,21 @@ public class Portal implements Comparable<Portal> {
 		return name;
 	}
 	
-	public void decreaseCount() {
-		if (keys > 0)
-			keys--;
-	}
-	
-	public void increaseCount() {
-		if (keys < MainActivity.MAX_KEYS)
+	public void increaseCount(final Context c) {
+		if (keys < MainActivity.MAX_KEYS) {
 			keys++;
+			keysChanged(c);
+		}
 	}
 	
-	@Override
-	public int compareTo(Portal another) {
-		return name.compareTo(another.name);
+	private void keysChanged(final Context c) {
+		//write the new key value to the database
+		final DatabaseHandler dh = new DatabaseHandler(c);
+		dh.updatePortal(id, keys);
+	}
+	
+	public void delete(Context c) {
+		final DatabaseHandler dh = new DatabaseHandler(c);
+		dh.deletePortal(id);
 	}
 }
