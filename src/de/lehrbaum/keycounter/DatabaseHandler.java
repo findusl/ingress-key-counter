@@ -5,6 +5,8 @@ import java.util.List;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -46,6 +48,32 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 		return res;
 	}
 	
+	private static final String PREFS_NAME = "Portals";
+	private static final String PORT_LENGTH = "lengt";
+	
+	public static void convertOldPortals(MainActivity act) {
+		SharedPreferences settings = act.getSharedPreferences(
+			PREFS_NAME, 0);
+		//the number of portals
+		int size = settings.getInt(PORT_LENGTH, 0);
+		if (size == 0)
+			return;
+		DatabaseHandler dh = new DatabaseHandler(act);
+		SQLiteDatabase db = dh.getWritableDatabase();
+		for (int i = 0; i < size; i++) {
+			//loading each portal
+			String name = settings.getString(i + "_name", "No Name");
+			int keys = settings.getInt(i + "_count", 0);
+			ContentValues cv = new ContentValues(2);
+			cv.put(NAME_COLUMN, name);
+			cv.put(PORT_KEYS, keys);
+			db.insert(PORT_TABLE, null, cv);
+		}
+		Editor edit = settings.edit();
+		edit.remove(PORT_LENGTH);
+		edit.commit();
+	}
+
 	/**
 	 * Inserts a new portal to the database.
 	 * 
@@ -145,13 +173,16 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 			+ " INTEGER REFERENCES portals(id) ON DELETE CASCADE, "
 			+ "PRIMARY KEY(" + MAP_CAT + ", "
 			+ MAP_PORT + "));");
-		//TODO: insert old portals if there are some
+		ContentValues cv = new ContentValues(2);
+		cv.put(ID_COLUMN, 0);
+		cv.put(NAME_COLUMN, "DEFAULT");
+		db.insert(CAT_TABLE, null, cv);
 	}
 	
 	@Override
 	public void onOpen(SQLiteDatabase db) {
 		super.onOpen(db);
-		db.execSQL("PRAGMA foreign_keys = ON;");
+		db.execSQL("PRAGMA foreign_keys = ON;"); 
 	}
 	
 	@Override

@@ -44,10 +44,21 @@ public class MainActivity extends ListActivity {
 			public void onClick(final DialogInterface dialog, final int whichButton) {
 				//User entered Portal
 				final String name = input.getText().toString();
-				portals.add(new Portal(getApplicationContext(), currentCat, name));
-				//could extract to second thread, to not block the ui thread
-				Collections.sort(portals);
-				adapter.notifyDataSetChanged();
+				//extract the rest to new thread
+				new Thread() {
+					@Override
+					public void run() {
+						portals.add(new Portal(getApplicationContext(), currentCat,
+							name));
+						Collections.sort(portals);
+						MainActivity.this.runOnUiThread(new Runnable() {
+							@Override
+							public void run() {
+								adapter.notifyDataSetChanged();
+							}
+						});
+					};
+				}.start();
 			}
 		});
 		
@@ -65,13 +76,18 @@ public class MainActivity extends ListActivity {
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		//TODO: Load the categories and load the portals of first cat
+		DatabaseHandler dh = new DatabaseHandler(this);
+		DatabaseHandler.convertOldPortals(this);
+		currentCat = 0;
+		portals = dh.getPortals(currentCat);
 		adapter = new CounterListAdapter(this, portals, this);
 		setListAdapter(adapter);
+
 	}
 	
 	@Override
 	public boolean onCreateOptionsMenu(final Menu menu) {
+		//TODO: read categories from database
 		MenuInflater inflater;
 		//an error in older sdk versions...
 		if (Build.VERSION.SDK_INT > 15)
@@ -89,46 +105,9 @@ public class MainActivity extends ListActivity {
 	 * @return <code>true</code> if the portal was removed successfully.
 	 */
 	public boolean removePortal(final Portal p) {
+		p.delete(this);
 		final boolean r = portals.remove(p);
 		adapter.notifyDataSetChanged();
 		return r;
 	}
-	
-	/*/**
-	 * Loads the saved portals from the shared Preferences.
-	 
-	private void loadPortals() {
-		SharedPreferences settings = getSharedPreferences(
-			MainActivity.PREFS_NAME, 0);
-		//the number of portals
-		int size = settings.getInt(MainActivity.PORT_LENGTH, 0);
-		portals = new ArrayList<Portal>(size);
-		for (int i = 0; i < size; i++) {
-			//loading each portal
-			String name = settings.getString(i + "_name", "No Name");
-			int count = settings.getInt(i + "_count", 0);
-			Portal p = new Portal(name, count);
-			portals.add(p);
-		}
-		//sorting
-		Collections.sort(portals);
-	}
-	
-	/**
-	 * Writes all portals to the saved Preferences.
-	 
-	private void persistPortals() {
-		SharedPreferences settings = getSharedPreferences(
-			MainActivity.PREFS_NAME, 0);
-		SharedPreferences.Editor editor = settings.edit();
-		int size = portals.size();
-		editor.putInt(MainActivity.PORT_LENGTH, size);
-		for (int i = 0; i < size; i++) {
-			Portal p = portals.get(i);
-			editor.putString(i + "_name", p.getName());
-			editor.putInt(i + "_count", p.getKeyCount());
-		}
-		
-		editor.commit();
-	}*/
 }
