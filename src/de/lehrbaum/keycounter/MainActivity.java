@@ -6,6 +6,7 @@ import java.util.List;
 import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Menu;
@@ -77,7 +78,9 @@ public class MainActivity extends ListActivity {
 	protected void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		DatabaseHandler dh = new DatabaseHandler(this);
-		DatabaseHandler.convertOldPortals(this);
+		//deleting all the preferences
+		SharedPreferences settings = getSharedPreferences("Portals", 0);
+		settings.edit().clear().commit();
 		currentCat = 0;
 		portals = dh.getPortals(currentCat);
 		adapter = new CounterListAdapter(this, portals, this);
