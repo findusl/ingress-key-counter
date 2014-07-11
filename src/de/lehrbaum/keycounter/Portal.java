@@ -74,7 +74,7 @@ public class Portal implements Comparable<Portal> {
 	}
 	
 	public void increaseCount(final Context c) {
-		if (keys < MainActivity.MAX_KEYS) {
+		if (keys < MainFragment.MAX_KEYS) {
 			keys++;
 			keysChanged(c);
 		}

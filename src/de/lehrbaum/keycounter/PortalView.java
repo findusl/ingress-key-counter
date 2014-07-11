@@ -1,5 +1,6 @@
 package de.lehrbaum.keycounter;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -28,7 +29,7 @@ public class PortalView extends TextView implements
 	private Paint lgreen, dgreen, red;//colors for the painting
 	private boolean longClick;//true if there has been a long click
 	private MenuInflater inflater;
-	private MainActivity activity;
+	private CounterListAdapter listAdapter;
 	
 	public PortalView(final Context context, final AttributeSet attrs) {
 		super(context, attrs);
@@ -44,11 +45,11 @@ public class PortalView extends TextView implements
 	}
 	
 	public void init(final Portal portal, final MenuInflater inflater,
-		final MainActivity activity) {
+		final CounterListAdapter listAdapter) {
 		this.portal = portal;
 		setText(portal.getName());
 		this.inflater = inflater;
-		this.activity = activity;
+		this.listAdapter = listAdapter;
 	}
 	
 	@Override
@@ -66,7 +67,7 @@ public class PortalView extends TextView implements
 		//		Log.d(PortalView.TAG, "onDraw called");
 		for (int i = 0; i < portal.getKeyCount(); i++)
 			canvas.drawRect(rects[i], i % 2 == 0 ? lgreen : dgreen);
-		for (int i = portal.getKeyCount(); i < MainActivity.MAX_KEYS; i++)
+		for (int i = portal.getKeyCount(); i < MainFragment.MAX_KEYS; i++)
 			canvas.drawRect(rects[i], red);
 		super.onDraw(canvas);
 	}
@@ -98,7 +99,8 @@ public class PortalView extends TextView implements
 	@Override
 	public boolean onMenuItemClick(final MenuItem p1) {
 		//delete clicked
-		activity.removePortal(portal);
+		listAdapter.remove(portal);
+		portal.delete(getContext());
 		return true;
 	}
 	
@@ -106,16 +108,18 @@ public class PortalView extends TextView implements
 	protected void onSizeChanged(final int w, final int h, final int oldw,
 		final int oldh) {
 		//resize the rectangles fitting the new size.
-		final double width = w / MainActivity.MAX_KEYS;
+		final double width = w / MainFragment.MAX_KEYS;
 		double current = 0;
-		rects = new Rect[(int) MainActivity.MAX_KEYS];
-		for (int i = 0; i < MainActivity.MAX_KEYS; i++) {
+		rects = new Rect[(int) MainFragment.MAX_KEYS];
+		for (int i = 0; i < MainFragment.MAX_KEYS; i++) {
 			rects[i] = new Rect((int) current, 0, (int) (current + width), h);
 			current = current + width;
 		}
 		super.onSizeChanged(w, h, oldw, oldh);
 	}
 	
+	//perform click looses information about the position of the click
+	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public boolean onTouchEvent(final MotionEvent event) {
 		if (event.getAction() == MotionEvent.ACTION_UP)

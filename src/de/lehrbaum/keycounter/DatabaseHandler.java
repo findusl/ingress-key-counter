@@ -9,7 +9,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
-import android.util.SparseArray;
 
 public class DatabaseHandler extends SQLiteOpenHelper {
 	private static final String TAG = DatabaseHandler.class.getCanonicalName();
@@ -24,7 +23,6 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 	private static final String MAP_TABLE = "mapping";
 	private static final String MAP_CAT = "category";
 	private static final String MAP_PORT = "portal";
-	
 	private static final int VERSION = 1;
 	
 	public DatabaseHandler(final Context context) {
@@ -84,7 +82,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 		Log.d(DatabaseHandler.TAG, "cat deleted " + res + " lines");
 	}
 
-	public SparseArray<String> getCategories() {
+	public List<Category> getCategories() {
 		final SQLiteDatabase db = getReadableDatabase();
 		//the names of all categories ordered by the id in asc order.
 		final Cursor c = db.query(DatabaseHandler.CAT_TABLE, new String[] {
@@ -92,11 +90,9 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 			null, null, null, null);
 		c.moveToFirst();
 		final int count = c.getCount();
-		final SparseArray<String> result = new SparseArray<String>(count);
+		final List<Category> result = new ArrayList<Category>(count);
 		for (int i = 0; i < count; i++) {
-			final int key = c.getInt(0);
-			final String name = c.getString(1);
-			result.put(key, name);
+			result.add(new Category(c));
 			c.moveToNext();
 		}
 		Log.d(DatabaseHandler.TAG, "Read categories " + count);
