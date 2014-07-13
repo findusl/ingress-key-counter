@@ -11,7 +11,8 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
 public class DatabaseHandler extends SQLiteOpenHelper {
-	private static final String TAG = DatabaseHandler.class.getCanonicalName();
+	private static final String TAG = DatabaseHandler.class
+		.getCanonicalName();
 	private static final String NAME = "keyCounter";//database name
 	//columns common to all tables
 	private static final String ID_COLUMN = "id";//the name of the id colum
@@ -26,7 +27,8 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 	private static final int VERSION = 1;
 	
 	public DatabaseHandler(final Context context) {
-		super(context, DatabaseHandler.NAME, null, DatabaseHandler.VERSION);
+		super(context, DatabaseHandler.NAME, null,
+			DatabaseHandler.VERSION);
 	}
 	
 	/**
@@ -39,8 +41,11 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 		final SQLiteDatabase db = getWritableDatabase();
 		final ContentValues cv = new ContentValues(1);
 		cv.put(DatabaseHandler.NAME_COLUMN, name);
-		final int res = (int) db.insert(DatabaseHandler.CAT_TABLE, null, cv);
-		Log.d(DatabaseHandler.TAG, "Inserted cat " + name + " row id " + res);
+		final int res = (int) db.insert(DatabaseHandler.CAT_TABLE,
+			null, cv);
+		Log.d(DatabaseHandler.TAG, "Inserted cat " + name + " row id "
+			+ res);
+		db.close();
 		return res;
 	}
 	
@@ -55,39 +60,46 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 		final SQLiteDatabase db = getWritableDatabase();
 		ContentValues cv = new ContentValues(1);
 		cv.put(DatabaseHandler.NAME_COLUMN, name);
-		final long id = (int) db.insert(DatabaseHandler.PORT_TABLE, null, cv);
-		Log.d(DatabaseHandler.TAG, "Inserted portal " + name + " row id " + id);
+		final long id = (int) db.insert(DatabaseHandler.PORT_TABLE,
+			null, cv);
+		Log.d(DatabaseHandler.TAG, "Inserted portal " + name
+			+ " row id " + id);
 		if (id == -1)
 			return id;//unsuccessful
 		cv = new ContentValues(2);
 		cv.put(DatabaseHandler.MAP_CAT, cat);
 		cv.put(DatabaseHandler.MAP_PORT, id);
-		final long res = (int) db.insert(DatabaseHandler.MAP_TABLE, null, cv);
-		Log.d(DatabaseHandler.TAG,
-			"Inserted map entry " + res + " values: " + cv.toString());
+		final long res = (int) db.insert(DatabaseHandler.MAP_TABLE,
+			null, cv);
+		Log.d(DatabaseHandler.TAG, "Inserted map entry " + res
+			+ " values: " + cv.toString());
+		db.close();
 		return id;
 	}
 	
 	public void deletePortal(long id) {
 		final SQLiteDatabase db = getWritableDatabase();
-		int res = db.delete(DatabaseHandler.PORT_TABLE, DatabaseHandler.ID_COLUMN
-			+ " == " + id, null);
+		int res = db.delete(DatabaseHandler.PORT_TABLE,
+			DatabaseHandler.ID_COLUMN + " == " + id, null);
+		db.close();
 		Log.d(DatabaseHandler.TAG, "port deleted " + res + " lines");
 	}
 	
 	public void deleteCategory(long id) {
 		final SQLiteDatabase db = getWritableDatabase();
-		int res = db.delete(DatabaseHandler.CAT_TABLE, DatabaseHandler.ID_COLUMN
-			+ " == " + id, null);
+		int res = db.delete(DatabaseHandler.CAT_TABLE,
+			DatabaseHandler.ID_COLUMN + " == " + id, null);
+		db.close();
 		Log.d(DatabaseHandler.TAG, "cat deleted " + res + " lines");
 	}
-
+	
 	public List<Category> getCategories() {
-		final SQLiteDatabase db = getReadableDatabase();
+		SQLiteDatabase db = getReadableDatabase();
 		//the names of all categories ordered by the id in asc order.
-		final Cursor c = db.query(DatabaseHandler.CAT_TABLE, new String[] {
-				DatabaseHandler.ID_COLUMN, DatabaseHandler.NAME_COLUMN }, null,
-			null, null, null, null);
+		final Cursor c = db.query(DatabaseHandler.CAT_TABLE,
+			new String[] { DatabaseHandler.ID_COLUMN,
+					DatabaseHandler.NAME_COLUMN }, null, null, null, null,
+			null);
 		c.moveToFirst();
 		final int count = c.getCount();
 		final List<Category> result = new ArrayList<Category>(count);
@@ -95,6 +107,8 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 			result.add(new Category(c));
 			c.moveToNext();
 		}
+		c.close();
+		db.close();
 		Log.d(DatabaseHandler.TAG, "Read categories " + count);
 		return result;
 	}
@@ -108,9 +122,13 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 	public List<Portal> getPortals(final int cat) {
 		final SQLiteDatabase db = getReadableDatabase();
 		//all portals that belong to that category
-		final Cursor c = db.rawQuery("select * from " + DatabaseHandler.PORT_TABLE
-			+ " where exists (select * from " + DatabaseHandler.MAP_TABLE + " where " + DatabaseHandler.ID_COLUMN
-			+ " == " + DatabaseHandler.MAP_PORT + " and " + DatabaseHandler.MAP_CAT + " == " + cat + ") order by "
+		final Cursor c = db.rawQuery("select * from "
+			+ DatabaseHandler.PORT_TABLE
+			+ " where exists (select * from "
+			+ DatabaseHandler.MAP_TABLE + " where "
+			+ DatabaseHandler.ID_COLUMN + " == "
+			+ DatabaseHandler.MAP_PORT + " and "
+			+ DatabaseHandler.MAP_CAT + " == " + cat + ") order by "
 			+ DatabaseHandler.NAME_COLUMN + "", null);
 		c.moveToFirst();
 		final int count = c.getCount();
@@ -119,19 +137,23 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 			result.add(new Portal(c));
 			c.moveToNext();
 		}
-		Log.d(DatabaseHandler.TAG, "Read portals for cat " + cat + " found "
-			+ count);
+		c.close();
+		db.close();
+		Log.d(DatabaseHandler.TAG, "Read portals for cat " + cat
+			+ " found " + count);
 		return result;
 	}
 	
 	@Override
 	public void onCreate(final SQLiteDatabase db) {
 		db.execSQL("CREATE TABLE " + DatabaseHandler.CAT_TABLE + " ("
-			+ DatabaseHandler.ID_COLUMN + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+			+ DatabaseHandler.ID_COLUMN
+			+ " INTEGER PRIMARY KEY AUTOINCREMENT, "
 			+ DatabaseHandler.NAME_COLUMN
 			+ " TEXT NOT NULL UNIQUE ON CONFLICT REPLACE);");
 		db.execSQL("CREATE TABLE " + DatabaseHandler.PORT_TABLE + " ("
-			+ DatabaseHandler.ID_COLUMN + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+			+ DatabaseHandler.ID_COLUMN
+			+ " INTEGER PRIMARY KEY AUTOINCREMENT, "
 			+ DatabaseHandler.NAME_COLUMN + " TEXT NOT NULL, "
 			+ DatabaseHandler.PORT_KEYS + " INTEGER DEFAULT 0);");
 		db.execSQL("CREATE TABLE " + DatabaseHandler.MAP_TABLE + " ("
@@ -150,11 +172,12 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 	@Override
 	public void onOpen(SQLiteDatabase db) {
 		super.onOpen(db);
-		db.execSQL("PRAGMA foreign_keys = ON;"); 
+		db.execSQL("PRAGMA foreign_keys = ON;");
 	}
 	
 	@Override
-	public void onUpgrade(final SQLiteDatabase db, final int oldV, final int newV) {
+	public void onUpgrade(final SQLiteDatabase db, final int oldV,
+		final int newV) {
 		// no older version yet
 	}
 	
@@ -168,8 +191,9 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 		final SQLiteDatabase db = getWritableDatabase();
 		final ContentValues cv = new ContentValues(1);
 		cv.put(DatabaseHandler.PORT_KEYS, keys);
-		db.update(DatabaseHandler.PORT_TABLE, cv, DatabaseHandler.ID_COLUMN
-			+ " == " + id, null);
+		db.update(DatabaseHandler.PORT_TABLE, cv,
+			DatabaseHandler.ID_COLUMN + " == " + id, null);
+		db.close();
 	}
 	
 	public static void deleteSelf(Context c) {

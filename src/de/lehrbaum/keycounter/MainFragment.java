@@ -60,6 +60,7 @@ public class MainFragment extends ListFragment implements
 		for (Category c : cats) {
 			MenuItem item = menu.add(R.id.group_cats, c.getId(),
 				Menu.NONE, c.getName());
+			menu.setGroupCheckable(R.id.group_cats, true, true);
 			item.setCheckable(true);
 			if (c.getId() == currentCat)
 				item.setChecked(true);
