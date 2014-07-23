@@ -24,9 +24,11 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 	private static final String MAP_TABLE = "mapping";
 	private static final String MAP_CAT = "category";
 	private static final String MAP_PORT = "portal";
-	private static final int VERSION = 1;
+	private static final int VERSION = 2;
 	
-	private List<Category> cats;//temporarily saving the categories
+	//temporarily saving the categories for more
+	//effizient memory and speed use.
+	private List<Category> cats;
 	
 	public DatabaseHandler(final Context context) {
 		super(context, DatabaseHandler.NAME, null,
@@ -98,7 +100,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 		int res = db.delete(MAP_TABLE, MAP_PORT + " == " + portalId
 				  + " and " + MAP_CAT + " == " + catId, null);
 		Log.d(TAG, "Deleted mapping entries " + res);
-		//TODO: add limit clause 1
+		/*//TODO: add limit clause 1
 		Cursor c = db.rawQuery("select * from "
 					+ DatabaseHandler.MAP_TABLE
 					+ " where " + MAP_PORT + " == "
@@ -108,7 +110,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 					DatabaseHandler.ID_COLUMN + " == " + portalId, null);
 			Log.d(TAG, "Deleted portal because no more mappings");
 		}
-		c.close();
+		c.close();*/
 		db.close();
 	}
 	
@@ -179,16 +181,19 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 	
 	@Override
 	public void onCreate(final SQLiteDatabase db) {
+		//table for the categories
 		db.execSQL("CREATE TABLE " + DatabaseHandler.CAT_TABLE + " ("
 			+ DatabaseHandler.ID_COLUMN
 			+ " INTEGER PRIMARY KEY AUTOINCREMENT, "
 			+ DatabaseHandler.NAME_COLUMN
 			+ " TEXT NOT NULL UNIQUE ON CONFLICT REPLACE);");
+		//table for the portals
 		db.execSQL("CREATE TABLE " + DatabaseHandler.PORT_TABLE + " ("
 			+ DatabaseHandler.ID_COLUMN
 			+ " INTEGER PRIMARY KEY AUTOINCREMENT, "
 			+ DatabaseHandler.NAME_COLUMN + " TEXT NOT NULL, "
 			+ DatabaseHandler.PORT_KEYS + " INTEGER DEFAULT 0);");
+		//table for the mappings
 		db.execSQL("CREATE TABLE " + DatabaseHandler.MAP_TABLE + " ("
 			+ DatabaseHandler.MAP_CAT
 			+ " INTEGER REFERENCES categories(id) ON DELETE CASCADE, "
@@ -200,6 +205,14 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 		cv.put(DatabaseHandler.ID_COLUMN, 0);
 		cv.put(DatabaseHandler.NAME_COLUMN, "DEFAULT");
 		db.insert(DatabaseHandler.CAT_TABLE, null, cv);
+		/*A trigger deleting a portal from the portals
+		 table if the last reference to it was deleted.*/
+		db.execSQL("CREATE TRIGGER deletePortal "
+				   + "AFTER DELETE ON " + MAP_TABLE
+				   + " FOR EACH ROW WHEN NOT EXISTS (SELECT * from "
+				   + MAP_TABLE + " WHERE OLD." + MAP_PORT + " == "
+				   + MAP_PORT + ") BEGIN DELETE FROM " + PORT_TABLE
+				   + " WHERE " + ID_COLUMN + " == OLD." + MAP_PORT + "; END");
 	}
 	
 	@Override
@@ -211,7 +224,17 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 	@Override
 	public void onUpgrade(final SQLiteDatabase db, final int oldV,
 		final int newV) {
-		// no older version yet
+		switch(oldV) {
+			case 1:
+				/*A trigger deleting a portal from the portals
+				table if the last reference to it was deleted.*/
+				db.execSQL("CREATE TRIGGER deletePortal "
+				+ "AFTER DELETE ON " + MAP_TABLE
+				+ " FOR EACH ROW WHEN NOT EXISTS (SELECT * from "
+				+ MAP_TABLE + " WHERE OLD." + MAP_PORT + " == "
+				+ MAP_PORT + ") BEGIN DELETE FROM " + PORT_TABLE
+				+ " WHERE " + ID_COLUMN + " == OLD." + MAP_PORT + "; END");
+		}
 	}
 	
 	/**
