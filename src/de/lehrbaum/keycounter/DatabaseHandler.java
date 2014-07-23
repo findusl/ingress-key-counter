@@ -26,6 +26,8 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 	private static final String MAP_PORT = "portal";
 	private static final int VERSION = 1;
 	
+	private List<Category> cats;//temporarily saving the categories
+	
 	public DatabaseHandler(final Context context) {
 		super(context, DatabaseHandler.NAME, null,
 			DatabaseHandler.VERSION);
@@ -37,7 +39,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 	 * @param name The name of the category
 	 * @return The id of the inserted category or -1 if the insertion failed
 	 */
-	public int addCategory(final String name) {
+	public synchronized int addCategory(final String name) {
 		final SQLiteDatabase db = getWritableDatabase();
 		final ContentValues cv = new ContentValues(1);
 		cv.put(DatabaseHandler.NAME_COLUMN, name);
@@ -46,6 +48,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 		Log.d(DatabaseHandler.TAG, "Inserted cat " + name + " row id "
 			+ res);
 		db.close();
+		cats = null;
 		return res;
 	}
 	
@@ -77,23 +80,51 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 		return id;
 	}
 	
-	public void deletePortal(long id) {
+	public void addPortalToCategory(long portalId, long categoryId) {
 		final SQLiteDatabase db = getWritableDatabase();
-		int res = db.delete(DatabaseHandler.PORT_TABLE,
-			DatabaseHandler.ID_COLUMN + " == " + id, null);
+		ContentValues cv = new ContentValues(1);
+		cv = new ContentValues(2);
+		cv.put(DatabaseHandler.MAP_CAT, categoryId);
+		cv.put(DatabaseHandler.MAP_PORT, portalId);
+		final long res = (int) db.insert(DatabaseHandler.MAP_TABLE,
+										 null, cv);
+		Log.d(DatabaseHandler.TAG, "Inserted map entry " + res
+			  + " values: " + cv.toString());
 		db.close();
-		Log.d(DatabaseHandler.TAG, "port deleted " + res + " lines");
 	}
 	
-	public void deleteCategory(long id) {
+	public void deletePortal(long portalId, long catId) {
+		final SQLiteDatabase db = getWritableDatabase();
+		int res = db.delete(MAP_TABLE, MAP_PORT + " == " + portalId
+				  + " and " + MAP_CAT + " == " + catId, null);
+		Log.d(TAG, "Deleted mapping entries " + res);
+		//TODO: add limit clause 1
+		Cursor c = db.rawQuery("select * from "
+					+ DatabaseHandler.MAP_TABLE
+					+ " where " + MAP_PORT + " == "
+					+ portalId, null);
+		if(c.getCount() == 0) {
+			db.delete(DatabaseHandler.PORT_TABLE,
+					DatabaseHandler.ID_COLUMN + " == " + portalId, null);
+			Log.d(TAG, "Deleted portal because no more mappings");
+		}
+		c.close();
+		db.close();
+	}
+	
+	//TODO: Add sql functions for deleting and removing of garbage
+	public synchronized void deleteCategory(long id) {
 		final SQLiteDatabase db = getWritableDatabase();
 		int res = db.delete(DatabaseHandler.CAT_TABLE,
 			DatabaseHandler.ID_COLUMN + " == " + id, null);
 		db.close();
+		cats = null;
 		Log.d(DatabaseHandler.TAG, "cat deleted " + res + " lines");
 	}
 	
-	public List<Category> getCategories() {
+	public synchronized List<Category> getCategories() {
+		if(cats != null)
+			return cats;
 		SQLiteDatabase db = getReadableDatabase();
 		//the names of all categories ordered by the id in asc order.
 		final Cursor c = db.query(DatabaseHandler.CAT_TABLE,
@@ -110,6 +141,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 		c.close();
 		db.close();
 		Log.d(DatabaseHandler.TAG, "Read categories " + count);
+		cats = result;
 		return result;
 	}
 	
@@ -119,7 +151,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 	 * @param cat The current category.
 	 * @return A list of all portals associated with this category.
 	 */
-	public List<Portal> getPortals(final int cat) {
+	public List<Portal> getPortals(Category cat) {
 		final SQLiteDatabase db = getReadableDatabase();
 		//all portals that belong to that category
 		final Cursor c = db.rawQuery("select * from "
@@ -128,13 +160,14 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 			+ DatabaseHandler.MAP_TABLE + " where "
 			+ DatabaseHandler.ID_COLUMN + " == "
 			+ DatabaseHandler.MAP_PORT + " and "
-			+ DatabaseHandler.MAP_CAT + " == " + cat + ") order by "
-			+ DatabaseHandler.NAME_COLUMN + "", null);
+			+ DatabaseHandler.MAP_CAT + " == "
+			+ cat.getId() + ") order by "
+			+ DatabaseHandler.NAME_COLUMN, null);
 		c.moveToFirst();
 		final int count = c.getCount();
 		final ArrayList<Portal> result = new ArrayList<Portal>(count);
 		for (int i = 0; i < count; i++) {
-			result.add(new Portal(c));
+			result.add(new Portal(c, cat));
 			c.moveToNext();
 		}
 		c.close();
@@ -162,7 +195,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 			+ DatabaseHandler.MAP_PORT
 			+ " INTEGER REFERENCES portals(id) ON DELETE CASCADE, "
 			+ "PRIMARY KEY(" + DatabaseHandler.MAP_CAT + ", "
-			+ DatabaseHandler.MAP_PORT + "));");
+			+ DatabaseHandler.MAP_PORT + ") ON CONFLICT IGNORE);");
 		ContentValues cv = new ContentValues(2);
 		cv.put(DatabaseHandler.ID_COLUMN, 0);
 		cv.put(DatabaseHandler.NAME_COLUMN, "DEFAULT");

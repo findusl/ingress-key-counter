@@ -8,8 +8,6 @@ public class Category {
 	private static final String TAG = Category.class
 		.getCanonicalName();
 	
-	private static OnChangeListener<Category> listener;
-	
 	private int id;
 	private String name;
 	
@@ -21,8 +19,6 @@ public class Category {
 		}
 		id = dh.addCategory(name);
 		this.name = name;
-		if (Category.listener != null)
-			Category.listener.onAdd(this);
 	}
 	
 	public Category(Cursor c) {
@@ -52,11 +48,14 @@ public class Category {
 	public void delete(Context c) {
 		DatabaseHandler dh = new DatabaseHandler(c);
 		dh.deleteCategory(id);
-		Category.listener.onDestroy(this);
 	}
-	
-	public static void setOnChangeListener(
-		OnChangeListener<Category> listener) {
-		Category.listener = listener;
+
+	@Override
+	public boolean equals(Object o)
+	{
+		if(o instanceof Category) {
+			return ((Category) o).id == id;
+		}
+		return false;
 	}
 }

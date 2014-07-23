@@ -1,5 +1,7 @@
 package de.lehrbaum.keycounter;
 
+import java.util.List;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -13,6 +15,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnLongClickListener;
 import android.widget.TextView;
+import android.view.*;
 
 public class PortalView extends TextView implements
 	MenuItem.OnMenuItemClickListener, OnLongClickListener {
@@ -56,8 +59,18 @@ public class PortalView extends TextView implements
 	protected void onCreateContextMenu(final ContextMenu menu) {
 		//showing the context menu with the delete button
 		inflater.inflate(R.menu.menu_element, menu);
-		final MenuItem item = menu.findItem(R.id.delete);
+		
+		MenuItem item = menu.findItem(R.id.delete);
 		item.setOnMenuItemClickListener(this);
+		
+		SubMenu copyMenu = menu.addSubMenu(Menu.NONE, Menu.NONE, 
+						Menu.NONE, android.R.string.copy);
+		List<Category> cats = (new DatabaseHandler(getContext())).getCategories();
+		for (Category c : cats) {
+			item = copyMenu.add(R.id.group_cats, c.getId(),
+									 Menu.NONE, c.getName());
+			item.setOnMenuItemClickListener(this);
+		}
 		super.onCreateContextMenu(menu);
 	}
 	
@@ -97,11 +110,24 @@ public class PortalView extends TextView implements
 	}
 	
 	@Override
-	public boolean onMenuItemClick(final MenuItem p1) {
-		//delete clicked
-		listAdapter.remove(portal);
-		portal.delete(getContext());
-		return true;
+	public boolean onMenuItemClick(final MenuItem item) {
+		List<Category> cats = 
+			(new DatabaseHandler(getContext())).getCategories();
+		switch(item.getItemId()) {
+		case R.id.delete:
+			//delete clicked
+			listAdapter.remove(portal);
+			portal.delete(getContext());
+			return true;
+		default:
+			for(Category c : cats) {
+				if(c.getId() == item.getItemId()) {
+					portal.copyTo(getContext(),c);
+				}
+			}
+			break;
+		}
+		return false;
 	}
 	
 	@Override

@@ -19,17 +19,17 @@ public class CategoriesFragment extends ListFragment {
 	@SuppressWarnings("unused")
 	private static final String TAG = CategoriesFragment.class
 		.getCanonicalName();
-	private List<Category> cats;
 	private ArrayAdapter<Category> adapter;
 	
-	public CategoriesFragment(List<Category> cats) {
+	public CategoriesFragment() {
 		super();
-		this.cats = cats;
 	}
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		List <Category> cats = 
+			new DatabaseHandler(getActivity()).getCategories();
 		adapter = new ArrayAdapter<Category>(getActivity(),
 			android.R.layout.simple_list_item_1, cats);
 		setListAdapter(adapter);
@@ -60,9 +60,13 @@ public class CategoriesFragment extends ListFragment {
 		case R.id.delete:
 			AdapterContextMenuInfo info = (AdapterContextMenuInfo) item
 				.getMenuInfo();
-			Category cat = cats.remove(info.position);
+			Category cat = adapter.getItem(info.position);
 			cat.delete(getActivity());
-			adapter.notifyDataSetChanged();
+			List <Category> cats = 
+					new DatabaseHandler(getActivity()).getCategories();
+			adapter = new ArrayAdapter<Category>(getActivity(),
+						 android.R.layout.simple_list_item_1, cats);
+			setListAdapter(adapter);
 			return true;
 		}
 		return super.onContextItemSelected(item);
@@ -89,11 +93,14 @@ public class CategoriesFragment extends ListFragment {
 			@Override
 			public void processInput(String input) {
 				Category cat = new Category(getActivity(), input);
-				cats.add(cat);
+				List <Category> cats = 
+					new DatabaseHandler(getActivity()).getCategories();
+				adapter = new ArrayAdapter<Category>(getActivity(),
+							android.R.layout.simple_list_item_1, cats);
 				getActivity().runOnUiThread(new Runnable() {
 					@Override
 					public void run() {
-						adapter.notifyDataSetChanged();
+						setListAdapter(adapter);
 					}
 				});
 			}

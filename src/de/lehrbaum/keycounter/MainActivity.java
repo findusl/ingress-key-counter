@@ -15,8 +15,6 @@ import android.view.MenuItem;
 import android.widget.EditText;
 
 public class MainActivity extends Activity {
-	
-	private List<Category> cats;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -30,14 +28,6 @@ public class MainActivity extends Activity {
 		SharedPreferences settings = getSharedPreferences("Portals", 0);
 		settings.edit().clear().commit();
 	}
-	
-	public List<Category> getCategories() {
-		if (cats == null) {
-			DatabaseHandler dh = new DatabaseHandler(this);
-			cats = dh.getCategories();
-		}
-		return cats;
-	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
@@ -45,7 +35,7 @@ public class MainActivity extends Activity {
 		case R.id.prefs:
 			FragmentManager manager = getFragmentManager();
 			FragmentTransaction transaction = manager.beginTransaction();
-			Fragment newF = new CategoriesFragment(getCategories());
+			Fragment newF = new CategoriesFragment();
 			transaction.replace(R.id.fragment_container, newF);
 			transaction.addToBackStack(null);
 			transaction.commit();
