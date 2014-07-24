@@ -8,16 +8,16 @@ public class Category {
 	private static final String TAG = Category.class
 		.getCanonicalName();
 	
-	private int id;
+	private final int id;
 	private String name;
 	
 	public Category(Context context, String name) {
 		DatabaseHandler dh = new DatabaseHandler(context);
+		id = dh.addCategory(name);
 		if (id < 0) {
 			Log.d(Category.TAG, "Could not add Category: " + name);
 			return;//something went wrong
 		}
-		id = dh.addCategory(name);
 		this.name = name;
 	}
 	
@@ -49,11 +49,10 @@ public class Category {
 		DatabaseHandler dh = new DatabaseHandler(c);
 		dh.deleteCategory(id);
 	}
-
+	
 	@Override
-	public boolean equals(Object o)
-	{
-		if(o instanceof Category) {
+	public boolean equals(Object o) {
+		if (o instanceof Category) {
 			return ((Category) o).id == id;
 		}
 		return false;

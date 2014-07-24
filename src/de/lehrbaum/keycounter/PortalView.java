@@ -9,19 +9,21 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.ContextMenu;
+import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.SubMenu;
 import android.view.View;
 import android.view.View.OnLongClickListener;
 import android.widget.TextView;
-import android.view.*;
 
 public class PortalView extends TextView implements
 	MenuItem.OnMenuItemClickListener, OnLongClickListener {
 	
 	@SuppressWarnings("unused")
-	private static final String TAG = PortalView.class.getCanonicalName();
+	private static final String TAG = PortalView.class
+		.getCanonicalName();
 	
 	private Portal portal;
 	/*rectangles used for showing the number of keys
@@ -63,12 +65,13 @@ public class PortalView extends TextView implements
 		MenuItem item = menu.findItem(R.id.delete);
 		item.setOnMenuItemClickListener(this);
 		
-		SubMenu copyMenu = menu.addSubMenu(Menu.NONE, Menu.NONE, 
-						Menu.NONE, android.R.string.copy);
-		List<Category> cats = (new DatabaseHandler(getContext())).getCategories();
+		SubMenu copyMenu = menu.addSubMenu(Menu.NONE, Menu.NONE,
+			Menu.NONE, android.R.string.copy);
+		List<Category> cats = new DatabaseHandler(getContext())
+			.getCategories();
 		for (Category c : cats) {
-			item = copyMenu.add(R.id.group_cats, c.getId(),
-									 Menu.NONE, c.getName());
+			item = copyMenu.add(R.id.group_cats, c.getId(), Menu.NONE,
+				c.getName());
 			item.setOnMenuItemClickListener(this);
 		}
 		super.onCreateContextMenu(menu);
@@ -91,10 +94,12 @@ public class PortalView extends TextView implements
 		lgreen = new Paint();
 		dgreen = new Paint();
 		red = new Paint();
-		lgreen
-			.setColor(getResources().getColor(android.R.color.holo_green_light));
-		dgreen.setColor(getResources().getColor(android.R.color.holo_green_dark));
-		red.setColor(getResources().getColor(android.R.color.darker_gray));
+		lgreen.setColor(getResources().getColor(
+			android.R.color.holo_green_light));
+		dgreen.setColor(getResources().getColor(
+			android.R.color.holo_green_dark));
+		red.setColor(getResources().getColor(
+			android.R.color.darker_gray));
 		setClickable(true);
 		setLongClickable(true);
 		setOnLongClickListener(this);
@@ -111,18 +116,17 @@ public class PortalView extends TextView implements
 	
 	@Override
 	public boolean onMenuItemClick(final MenuItem item) {
-		List<Category> cats = 
-			(new DatabaseHandler(getContext())).getCategories();
-		switch(item.getItemId()) {
+		List<Category> cats = new DatabaseHandler(getContext())
+			.getCategories();
+		switch (item.getItemId()) {
 		case R.id.delete:
 			//delete clicked
 			listAdapter.remove(portal);
-			portal.delete(getContext());
 			return true;
 		default:
-			for(Category c : cats) {
-				if(c.getId() == item.getItemId()) {
-					portal.copyTo(getContext(),c);
+			for (Category c : cats) {
+				if (c.getId() == item.getItemId()) {
+					portal.copyTo(getContext(), c);
 				}
 			}
 			break;
@@ -131,14 +135,15 @@ public class PortalView extends TextView implements
 	}
 	
 	@Override
-	protected void onSizeChanged(final int w, final int h, final int oldw,
-		final int oldh) {
+	protected void onSizeChanged(final int w, final int h,
+		final int oldw, final int oldh) {
 		//resize the rectangles fitting the new size.
 		final double width = w / MainFragment.MAX_KEYS;
 		double current = 0;
 		rects = new Rect[(int) MainFragment.MAX_KEYS];
 		for (int i = 0; i < MainFragment.MAX_KEYS; i++) {
-			rects[i] = new Rect((int) current, 0, (int) (current + width), h);
+			rects[i] = new Rect((int) current, 0,
+				(int) (current + width), h);
 			current = current + width;
 		}
 		super.onSizeChanged(w, h, oldw, oldh);

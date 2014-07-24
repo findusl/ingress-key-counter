@@ -3,11 +3,13 @@ package de.lehrbaum.keycounter;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.os.Build;
 import android.util.Log;
 
 public class DatabaseHandler extends SQLiteOpenHelper {
@@ -57,11 +59,10 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 	/**
 	 * Inserts a new portal to the database.
 	 * 
-	 * @param cat The id of the category to insert the portal in.
 	 * @param name The name of the portal.
 	 * @return The id of the inserted portal or -1 if the insertion failed.
 	 */
-	public long addPortal(final int cat, final String name) {
+	public long addPortal(final String name) {
 		final SQLiteDatabase db = getWritableDatabase();
 		ContentValues cv = new ContentValues(1);
 		cv.put(DatabaseHandler.NAME_COLUMN, name);
@@ -69,15 +70,6 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 			null, cv);
 		Log.d(DatabaseHandler.TAG, "Inserted portal " + name
 			+ " row id " + id);
-		if (id == -1)
-			return id;//unsuccessful
-		cv = new ContentValues(2);
-		cv.put(DatabaseHandler.MAP_CAT, cat);
-		cv.put(DatabaseHandler.MAP_PORT, id);
-		final long res = (int) db.insert(DatabaseHandler.MAP_TABLE,
-			null, cv);
-		Log.d(DatabaseHandler.TAG, "Inserted map entry " + res
-			+ " values: " + cv.toString());
 		db.close();
 		return id;
 	}
@@ -89,32 +81,23 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 		cv.put(DatabaseHandler.MAP_CAT, categoryId);
 		cv.put(DatabaseHandler.MAP_PORT, portalId);
 		final long res = (int) db.insert(DatabaseHandler.MAP_TABLE,
-										 null, cv);
+			null, cv);
+		//because the table is created with ON CONFLICT IGNORE there is no error
+		//when adding a portal to a category it already is added to.
 		Log.d(DatabaseHandler.TAG, "Inserted map entry " + res
-			  + " values: " + cv.toString());
+			+ " values: " + cv.toString());
 		db.close();
 	}
 	
 	public void deletePortal(long portalId, long catId) {
 		final SQLiteDatabase db = getWritableDatabase();
-		int res = db.delete(MAP_TABLE, MAP_PORT + " == " + portalId
-				  + " and " + MAP_CAT + " == " + catId, null);
-		Log.d(TAG, "Deleted mapping entries " + res);
-		/*//TODO: add limit clause 1
-		Cursor c = db.rawQuery("select * from "
-					+ DatabaseHandler.MAP_TABLE
-					+ " where " + MAP_PORT + " == "
-					+ portalId, null);
-		if(c.getCount() == 0) {
-			db.delete(DatabaseHandler.PORT_TABLE,
-					DatabaseHandler.ID_COLUMN + " == " + portalId, null);
-			Log.d(TAG, "Deleted portal because no more mappings");
-		}
-		c.close();*/
+		int res = db.delete(DatabaseHandler.MAP_TABLE,
+			DatabaseHandler.MAP_PORT + " == " + portalId + " and "
+				+ DatabaseHandler.MAP_CAT + " == " + catId, null);
+		Log.d(DatabaseHandler.TAG, "Deleted mapping entries " + res);
 		db.close();
 	}
 	
-	//TODO: Add sql functions for deleting and removing of garbage
 	public synchronized void deleteCategory(long id) {
 		final SQLiteDatabase db = getWritableDatabase();
 		int res = db.delete(DatabaseHandler.CAT_TABLE,
@@ -125,7 +108,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 	}
 	
 	public synchronized List<Category> getCategories() {
-		if(cats != null)
+		if (cats != null)
 			return cats;
 		SQLiteDatabase db = getReadableDatabase();
 		//the names of all categories ordered by the id in asc order.
@@ -153,7 +136,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 	 * @param cat The current category.
 	 * @return A list of all portals associated with this category.
 	 */
-	public List<Portal> getPortals(Category cat) {
+	public List<Portal> getPortals(int catId) {
 		final SQLiteDatabase db = getReadableDatabase();
 		//all portals that belong to that category
 		final Cursor c = db.rawQuery("select * from "
@@ -162,19 +145,18 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 			+ DatabaseHandler.MAP_TABLE + " where "
 			+ DatabaseHandler.ID_COLUMN + " == "
 			+ DatabaseHandler.MAP_PORT + " and "
-			+ DatabaseHandler.MAP_CAT + " == "
-			+ cat.getId() + ") order by "
-			+ DatabaseHandler.NAME_COLUMN, null);
+			+ DatabaseHandler.MAP_CAT + " == " + catId + ") order by "
+			+ DatabaseHandler.NAME_COLUMN + ";", null);
 		c.moveToFirst();
 		final int count = c.getCount();
 		final ArrayList<Portal> result = new ArrayList<Portal>(count);
 		for (int i = 0; i < count; i++) {
-			result.add(new Portal(c, cat));
+			result.add(new Portal(c));
 			c.moveToNext();
 		}
 		c.close();
 		db.close();
-		Log.d(DatabaseHandler.TAG, "Read portals for cat " + cat
+		Log.d(DatabaseHandler.TAG, "Read portals for cat " + catId
 			+ " found " + count);
 		return result;
 	}
@@ -207,34 +189,45 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 		db.insert(DatabaseHandler.CAT_TABLE, null, cv);
 		/*A trigger deleting a portal from the portals
 		 table if the last reference to it was deleted.*/
-		db.execSQL("CREATE TRIGGER deletePortal "
-				   + "AFTER DELETE ON " + MAP_TABLE
-				   + " FOR EACH ROW WHEN NOT EXISTS (SELECT * from "
-				   + MAP_TABLE + " WHERE OLD." + MAP_PORT + " == "
-				   + MAP_PORT + ") BEGIN DELETE FROM " + PORT_TABLE
-				   + " WHERE " + ID_COLUMN + " == OLD." + MAP_PORT + "; END");
-	}
-	
-	@Override
-	public void onOpen(SQLiteDatabase db) {
-		super.onOpen(db);
-		db.execSQL("PRAGMA foreign_keys = ON;");
+		db.execSQL("CREATE TRIGGER deletePortal " + "AFTER DELETE ON "
+			+ DatabaseHandler.MAP_TABLE
+			+ " FOR EACH ROW WHEN NOT EXISTS (SELECT * from "
+			+ DatabaseHandler.MAP_TABLE + " WHERE OLD."
+			+ DatabaseHandler.MAP_PORT + " == "
+			+ DatabaseHandler.MAP_PORT + ") BEGIN DELETE FROM "
+			+ DatabaseHandler.PORT_TABLE + " WHERE "
+			+ DatabaseHandler.ID_COLUMN + " == OLD."
+			+ DatabaseHandler.MAP_PORT + "; END");
 	}
 	
 	@Override
 	public void onUpgrade(final SQLiteDatabase db, final int oldV,
 		final int newV) {
-		switch(oldV) {
-			case 1:
-				/*A trigger deleting a portal from the portals
-				table if the last reference to it was deleted.*/
-				db.execSQL("CREATE TRIGGER deletePortal "
-				+ "AFTER DELETE ON " + MAP_TABLE
+		switch (oldV) {
+		case 1:
+			/*A trigger deleting a portal from the portals
+			table if the last reference to it was deleted.*/
+			db.execSQL("CREATE TRIGGER deletePortal "
+				+ "AFTER DELETE ON " + DatabaseHandler.MAP_TABLE
 				+ " FOR EACH ROW WHEN NOT EXISTS (SELECT * from "
-				+ MAP_TABLE + " WHERE OLD." + MAP_PORT + " == "
-				+ MAP_PORT + ") BEGIN DELETE FROM " + PORT_TABLE
-				+ " WHERE " + ID_COLUMN + " == OLD." + MAP_PORT + "; END");
+				+ DatabaseHandler.MAP_TABLE + " WHERE OLD."
+				+ DatabaseHandler.MAP_PORT + " == "
+				+ DatabaseHandler.MAP_PORT + ") BEGIN DELETE FROM "
+				+ DatabaseHandler.PORT_TABLE + " WHERE "
+				+ DatabaseHandler.ID_COLUMN + " == OLD."
+				+ DatabaseHandler.MAP_PORT + "; END");
 		}
+	}
+	
+	@SuppressLint("NewApi")
+	@Override
+	public void onOpen(SQLiteDatabase db) {
+		//should actually be done in onConfigure but that relies on api 16 too.
+		if (Build.VERSION.SDK_INT < 16)
+			db.execSQL("PRAGMA foreign_keys=ON;");
+		else
+			db.setForeignKeyConstraintsEnabled(true);
+		super.onOpen(db);
 	}
 	
 	/**
@@ -247,6 +240,15 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 		final SQLiteDatabase db = getWritableDatabase();
 		final ContentValues cv = new ContentValues(1);
 		cv.put(DatabaseHandler.PORT_KEYS, keys);
+		db.update(DatabaseHandler.PORT_TABLE, cv,
+			DatabaseHandler.ID_COLUMN + " == " + id, null);
+		db.close();
+	}
+	
+	public void updatePortal(long id, String name) {
+		final SQLiteDatabase db = getWritableDatabase();
+		final ContentValues cv = new ContentValues(1);
+		cv.put(DatabaseHandler.NAME_COLUMN, name);
 		db.update(DatabaseHandler.PORT_TABLE, cv,
 			DatabaseHandler.ID_COLUMN + " == " + id, null);
 		db.close();

@@ -1,6 +1,5 @@
 package de.lehrbaum.keycounter;
 
-import java.util.Collections;
 import java.util.List;
 
 import android.app.ListFragment;
@@ -23,10 +22,9 @@ public class MainFragment extends ListFragment {
 	 */
 	public static double MAX_KEYS = 10d;
 	
-	private List<Portal> portals;
+	private PortalList portals;
 	private CounterListAdapter adapter;
 	private Category currentCat;//the id of the current category
-	private Menu menu;
 	
 	@Override
 	public void onCreate(final Bundle savedInstanceState) {
@@ -37,14 +35,13 @@ public class MainFragment extends ListFragment {
 	@Override
 	public View onCreateView(LayoutInflater inflater,
 		ViewGroup container, Bundle savedInstanceState) {
-		List<Category> cats = 
-			new DatabaseHandler(getActivity()).getCategories();
+		DatabaseHandler dh = new DatabaseHandler(getActivity());
+		List<Category> cats = dh.getCategories();
 		if (cats.size() == 0)//add default category
 			cats.add(new Category(getActivity(), "Default"));
 		//take the first category as current one
 		currentCat = cats.get(0);
-		DatabaseHandler dh = new DatabaseHandler(getActivity());
-		portals = dh.getPortals(currentCat);
+		portals = new PortalList(dh, currentCat);
 		adapter = new CounterListAdapter(getActivity(), portals);
 		setListAdapter(adapter);
 		return super.onCreateView(inflater, container,
@@ -53,10 +50,10 @@ public class MainFragment extends ListFragment {
 	
 	@Override
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-		Log.d(TAG, "On create options menu");
+		Log.d(MainFragment.TAG, "On create options menu");
 		inflater.inflate(R.menu.menu_main, menu);
-		List<Category> cats = 
-			new DatabaseHandler(getActivity()).getCategories();
+		List<Category> cats = new DatabaseHandler(getActivity())
+			.getCategories();
 		for (Category c : cats) {
 			MenuItem item = menu.add(R.id.group_cats, c.getId(),
 				Menu.NONE, c.getName());
@@ -65,7 +62,6 @@ public class MainFragment extends ListFragment {
 			if (currentCat.equals(c))
 				item.setChecked(true);
 		}
-		this.menu = menu;
 		super.onCreateOptionsMenu(menu, inflater);
 	}
 	
@@ -77,19 +73,16 @@ public class MainFragment extends ListFragment {
 		}
 		if (item.getGroupId() == R.id.group_cats) {
 			//The user selected one of the categories
-			List<Category> cats = 
-				new DatabaseHandler(getActivity()).getCategories();
+			DatabaseHandler dh = new DatabaseHandler(getActivity());
+			List<Category> cats = dh.getCategories();
 			for (Category c : cats) {
 				if (item.getItemId() == c.getId()) {
 					if (currentCat.equals(c))
 						return false;
 					//category was changed
-					DatabaseHandler dh = new DatabaseHandler(getActivity());
 					currentCat = c;
-					portals = dh.getPortals(currentCat);
-					adapter = new CounterListAdapter(getActivity(),
-						portals);
-					setListAdapter(adapter);
+					portals.changeCategory(currentCat);
+					adapter.notifyDataSetChanged();
 					item.setChecked(true);
 					return true;
 				}
@@ -108,8 +101,7 @@ public class MainFragment extends ListFragment {
 		OnTextInputSubmitted inputProcessor = new OnTextInputSubmitted() {
 			@Override
 			public void processInput(String input) {
-				portals.add(new Portal(getActivity(), currentCat, input));
-				Collections.sort(portals);
+				portals.add(new Portal(getActivity(), input));
 				MainFragment.this.getActivity().runOnUiThread(
 					new Runnable() {
 						@Override
@@ -123,25 +115,4 @@ public class MainFragment extends ListFragment {
 			R.string.newPortalTitle, R.string.newPortalMessage,
 			inputProcessor);
 	}
-	
-/*	@Override
-	public void onAdd(final Category item) {
-		getActivity().runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				menu.add(R.id.group_cats, item.getId(), Menu.NONE,
-					item.getName()).setCheckable(true);
-			}
-		});
-	}
-	
-	@Override
-	public void onDestroy(final Category item) {
-		getActivity().runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				menu.removeItem(item.getId());
-			}
-		});
-	}*/
 }
