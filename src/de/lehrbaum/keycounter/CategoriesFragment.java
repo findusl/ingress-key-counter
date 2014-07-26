@@ -28,8 +28,8 @@ public class CategoriesFragment extends ListFragment {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		List <Category> cats = 
-			new DatabaseHandler(getActivity()).getCategories();
+		List<Category> cats = new DatabaseHandler(getActivity())
+			.getCategories();
 		adapter = new ArrayAdapter<Category>(getActivity(),
 			android.R.layout.simple_list_item_1, cats);
 		setListAdapter(adapter);
@@ -43,7 +43,8 @@ public class CategoriesFragment extends ListFragment {
 	}
 	
 	@Override
-	public void onListItemClick(ListView l, View v, int position, long id) {
+	public void onListItemClick(ListView l, View v, int position,
+		long id) {
 		v.showContextMenu();
 	}
 	
@@ -62,16 +63,16 @@ public class CategoriesFragment extends ListFragment {
 				.getMenuInfo();
 			Category cat = adapter.getItem(info.position);
 			cat.delete(getActivity());
-			List <Category> cats = 
-					new DatabaseHandler(getActivity()).getCategories();
+			List<Category> cats = new DatabaseHandler(getActivity())
+				.getCategories();
 			adapter = new ArrayAdapter<Category>(getActivity(),
-						 android.R.layout.simple_list_item_1, cats);
+				android.R.layout.simple_list_item_1, cats);
 			setListAdapter(adapter);
 			return true;
 		}
 		return super.onContextItemSelected(item);
 	}
-
+	
 	@Override
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
 		super.onCreateOptionsMenu(menu, inflater);
@@ -92,11 +93,11 @@ public class CategoriesFragment extends ListFragment {
 		OnTextInputSubmitted textListener = new OnTextInputSubmitted() {
 			@Override
 			public void processInput(String input) {
-				Category cat = new Category(getActivity(), input);
-				List <Category> cats = 
-					new DatabaseHandler(getActivity()).getCategories();
+				new Category(getActivity(), input);
+				List<Category> cats = new DatabaseHandler(getActivity())
+					.getCategories();
 				adapter = new ArrayAdapter<Category>(getActivity(),
-							android.R.layout.simple_list_item_1, cats);
+					android.R.layout.simple_list_item_1, cats);
 				getActivity().runOnUiThread(new Runnable() {
 					@Override
 					public void run() {
@@ -105,7 +106,7 @@ public class CategoriesFragment extends ListFragment {
 				});
 			}
 		};
-		MainActivity.showTextInputDialog(getActivity(), R.string.newCatTitle,
-			R.string.newCatMessage, textListener);
+		MainActivity.showTextInputDialog(getActivity(),
+			R.string.newCatTitle, R.string.newCatMessage, textListener);
 	}
 }

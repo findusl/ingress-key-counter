@@ -1,7 +1,5 @@
 package de.lehrbaum.keycounter;
 
-import java.util.List;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
@@ -15,20 +13,21 @@ import android.view.MenuItem;
 import android.widget.EditText;
 
 public class MainActivity extends Activity {
-
+	private static final String fragmentTag = "main";
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_main);
-		FragmentTransaction transaction = getFragmentManager().beginTransaction();
 		Fragment f = new MainFragment();
-		transaction.add(R.id.fragment_container, f);
+		FragmentTransaction transaction = getFragmentManager()
+			.beginTransaction();
+		transaction.add(android.R.id.content, f);
 		transaction.commit();
 		//deleting all the preferences
 		SharedPreferences settings = getSharedPreferences("Portals", 0);
 		settings.edit().clear().commit();
 	}
-
+	
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
@@ -36,7 +35,7 @@ public class MainActivity extends Activity {
 			FragmentManager manager = getFragmentManager();
 			FragmentTransaction transaction = manager.beginTransaction();
 			Fragment newF = new CategoriesFragment();
-			transaction.replace(R.id.fragment_container, newF);
+			transaction.replace(android.R.id.content, newF);
 			transaction.addToBackStack(null);
 			transaction.commit();
 			return true;
@@ -46,7 +45,8 @@ public class MainActivity extends Activity {
 	
 	public static void showTextInputDialog(Context context, int title,
 		int message, final OnTextInputSubmitted inputProcessor) {
-		final AlertDialog.Builder alert = new AlertDialog.Builder(context);
+		final AlertDialog.Builder alert = new AlertDialog.Builder(
+			context);
 		
 		//show input dialog for adding portal
 		alert.setTitle(context.getText(title));
@@ -55,27 +55,31 @@ public class MainActivity extends Activity {
 		final EditText input = new EditText(context);
 		alert.setView(input);
 		
-		alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-			@Override
-			public void onClick(final DialogInterface dialog, final int whichButton) {
-				//User entered Portal
-				final String name = input.getText().toString();
-				//extract the rest to new thread
-				new Thread() {
-					@Override
-					public void run() {
-						inputProcessor.processInput(name);
-					};
-				}.start();
-			}
-		});
+		alert.setPositiveButton("Ok",
+			new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(final DialogInterface dialog,
+					final int whichButton) {
+					//User entered Portal
+					final String name = input.getText().toString();
+					//extract the rest to new thread
+					new Thread() {
+						@Override
+						public void run() {
+							inputProcessor.processInput(name);
+						};
+					}.start();
+				}
+			});
 		
-		alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-			@Override
-			public void onClick(final DialogInterface dialog, final int whichButton) {
-				// Canceled.
-			}
-		});
+		alert.setNegativeButton("Cancel",
+			new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(final DialogInterface dialog,
+					final int whichButton) {
+					// Canceled.
+				}
+			});
 		//show
 		alert.show();
 	}
