@@ -13,7 +13,6 @@ import android.view.MenuItem;
 import android.widget.EditText;
 
 public class MainActivity extends Activity {
-	private static final String fragmentTag = "main";
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
